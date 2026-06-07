@@ -1,0 +1,89 @@
+"""Command-line interface for ActionRepro."""
+
+from __future__ import annotations
+
+import click
+from rich.console import Console
+from rich.table import Table
+
+from actionrepro import __version__
+from actionrepro.analyze import analyze_paths
+from actionrepro.github import fetch_run_log
+from actionrepro.report import to_json, to_markdown, to_pr_comment, write_report
+
+console = Console()
+
+
+@click.group()
+@click.version_option(__version__, prog_name="actionrepro")
+def main() -> None:
+    """Turn CI logs into local repro plans."""
+
+
+@main.command("fetch")
+@click.argument("repo")
+@click.argument("run_id")
+@click.option("--out", type=click.Path(dir_okay=False), help="Output log file.")
+def fetch_cmd(repo: str, run_id: str, out: str | None) -> None:
+    """Fetch a GitHub Actions run log through gh."""
+    output = out or f"actionrepro-{run_id}.log"
+    path = fetch_run_log(repo, run_id, output)
+    console.print(f"[green]Wrote log:[/green] {path}")
+
+
+@main.command("inspect")
+@click.argument("paths", nargs=-1, required=True, type=click.Path(exists=True, dir_okay=False))
+def inspect_cmd(paths: tuple[str, ...]) -> None:
+    """Show detected failures in a table."""
+    analysis = analyze_paths(list(paths))
+    table = Table(title="ActionRepro findings")
+    table.add_column("#", justify="right")
+    table.add_column("Category")
+    table.add_column("Job")
+    table.add_column("Step")
+    table.add_column("Headline")
+    for index, failure in enumerate(analysis.failures, start=1):
+        table.add_row(
+            str(index),
+            failure.category,
+            failure.job,
+            failure.step,
+            failure.headline[:90],
+        )
+    console.print(table)
+    if not analysis.failures:
+        console.print("[yellow]No obvious failure marker found.[/yellow]")
+
+
+@main.command("plan")
+@click.argument("paths", nargs=-1, required=True, type=click.Path(exists=True, dir_okay=False))
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--out", type=click.Path(dir_okay=False), help="Output report path.")
+def plan_cmd(paths: tuple[str, ...], fmt: str, out: str | None) -> None:
+    """Generate a repro plan from one or more logs."""
+    analysis = analyze_paths(list(paths))
+    if out:
+        path = write_report(analysis, out, "json" if fmt == "json" else "md")
+        console.print(f"[green]Wrote report:[/green] {path}")
+        return
+    console.print_json(to_json(analysis)) if fmt == "json" else console.print(to_markdown(analysis))
+
+
+@main.command("comment")
+@click.argument("paths", nargs=-1, required=True, type=click.Path(exists=True, dir_okay=False))
+@click.option("--pr", type=int, help="Pull request number for context.")
+@click.option("--dry-run/--post", default=True, help="Only print the comment. Posting is disabled.")
+def comment_cmd(paths: tuple[str, ...], pr: int | None, dry_run: bool) -> None:
+    """Draft a PR comment from the first actionable failure."""
+    if not dry_run:
+        raise click.ClickException(
+            "Posting is intentionally disabled in v0.1. Use --dry-run output."
+        )
+    analysis = analyze_paths(list(paths))
+    heading = f"Draft PR comment for #{pr}" if pr else "Draft PR comment"
+    console.print(f"[bold]{heading}[/bold]\n")
+    console.print(to_pr_comment(analysis))
+
+
+if __name__ == "__main__":
+    main()
