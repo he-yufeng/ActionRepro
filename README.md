@@ -55,6 +55,12 @@ Generate JSON:
 actionrepro plan run.log --format json --out repro.json
 ```
 
+Generate the same first-actionable finding as a paste-ready PR comment:
+
+```bash
+actionrepro plan run.log --format comment --out comment.md
+```
+
 Draft a PR comment without posting anything:
 
 ```bash
@@ -118,4 +124,3 @@ ruff check .
 python -m build
 twine check dist/*
 ```
-

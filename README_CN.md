@@ -68,6 +68,12 @@ actionrepro plan run.log --out repro.md
 actionrepro plan run.log --format json --out repro.json
 ```
 
+直接生成可粘贴到 PR 里的回复草稿：
+
+```bash
+actionrepro plan run.log --format comment --out comment.md
+```
+
 只生成 PR 回复草稿，不自动发布：
 
 ```bash
@@ -110,4 +116,3 @@ ruff check .
 python -m build
 twine check dist/*
 ```
-

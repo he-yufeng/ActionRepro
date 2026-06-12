@@ -67,6 +67,21 @@ def test_cli_plan_writes_markdown(tmp_path: Path) -> None:
     assert "ActionRepro report" in out.read_text(encoding="utf-8")
 
 
+def test_cli_plan_writes_pr_comment(tmp_path: Path) -> None:
+    runner = CliRunner()
+    out = tmp_path / "comment.md"
+
+    result = runner.invoke(
+        main,
+        ["plan", str(FIXTURES / "permission_gate.log"), "--format", "comment", "--out", str(out)],
+    )
+
+    assert result.exit_code == 0, result.output
+    text = out.read_text(encoding="utf-8")
+    assert "first actionable signal" in text
+    assert "permission_gate" in text
+
+
 def test_cli_inspect() -> None:
     runner = CliRunner()
 

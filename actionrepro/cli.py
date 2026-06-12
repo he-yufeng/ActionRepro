@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import click
 from rich.console import Console
 from rich.table import Table
@@ -57,16 +59,27 @@ def inspect_cmd(paths: tuple[str, ...]) -> None:
 
 @main.command("plan")
 @click.argument("paths", nargs=-1, required=True, type=click.Path(exists=True, dir_okay=False))
-@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--format", "fmt", type=click.Choice(["md", "json", "comment"]), default="md")
 @click.option("--out", type=click.Path(dir_okay=False), help="Output report path.")
 def plan_cmd(paths: tuple[str, ...], fmt: str, out: str | None) -> None:
     """Generate a repro plan from one or more logs."""
     analysis = analyze_paths(list(paths))
     if out:
-        path = write_report(analysis, out, "json" if fmt == "json" else "md")
+        if fmt == "comment":
+            path = Path(out)
+            if path.parent != Path("."):
+                path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(to_pr_comment(analysis) + "\n", encoding="utf-8")
+        else:
+            path = write_report(analysis, out, "json" if fmt == "json" else "md")
         console.print(f"[green]Wrote report:[/green] {path}")
         return
-    console.print_json(to_json(analysis)) if fmt == "json" else console.print(to_markdown(analysis))
+    if fmt == "json":
+        console.print_json(to_json(analysis))
+    elif fmt == "comment":
+        console.print(to_pr_comment(analysis))
+    else:
+        console.print(to_markdown(analysis))
 
 
 @main.command("comment")
