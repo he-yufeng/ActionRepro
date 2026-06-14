@@ -35,6 +35,23 @@ def test_classifies_network_429() -> None:
     assert "network_external_service" in categories
 
 
+def test_classifies_runner_memory_failure(tmp_path: Path) -> None:
+    log = tmp_path / "oom.log"
+    log.write_text(
+        "test\tRun tests\t2026-06-14T00:00:00Z\t##[group]Run npm test\n"
+        "test\tRun tests\t2026-06-14T00:00:01Z\tnpm test\n"
+        "test\tRun tests\t2026-06-14T00:00:02Z\t"
+        "FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory\n"
+        "test\tRun tests\t2026-06-14T00:00:03Z\t##[error]Process completed with exit code 137.\n",
+        encoding="utf-8",
+    )
+
+    analysis = analyze_paths([log])
+
+    assert analysis.failures[0].category == "runner_memory"
+    assert "memory" in analysis.failures[0].advice.lower()
+
+
 def test_reports_markdown_and_json() -> None:
     analysis = analyze_paths([FIXTURES / "pytest_failure.log"])
 

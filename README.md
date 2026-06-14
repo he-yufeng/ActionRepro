@@ -77,6 +77,7 @@ ActionRepro has deterministic rules for common CI failure shapes:
 - `permission_gate`: GitHub token, CLA, Vercel, secret, or integration permission failures
 - `network_external_service`: 429s, failed downloads, or external API/network failures
 - `runner_disk`: ENOSPC and disk pressure
+- `runner_memory`: OOM, exit 137, or JS heap exhaustion
 - `flaky_timeout`: timeout-shaped failures
 - `dependency_install`: package resolution or install failures
 - `lint_or_typecheck`: ruff, flake8, pylint, mypy, pyright, eslint, etc.

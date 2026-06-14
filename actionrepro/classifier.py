@@ -55,6 +55,18 @@ def classify(text: str, step: str = "") -> tuple[str, str]:
         )
     if any(token in haystack for token in ("no space left on device", "enospc", "disk quota")):
         return "runner_disk", "The runner ran out of disk space."
+    if any(
+        token in haystack
+        for token in (
+            "out of memory",
+            "oom-killed",
+            "oom killed",
+            "exit code 137",
+            "heap out of memory",
+            "killed process",
+        )
+    ):
+        return "runner_memory", "The runner likely ran out of memory."
     if any(token in haystack for token in ("timed out", "timeout", "cancelled after")):
         return "flaky_timeout", "The failing step timed out or behaved like a flaky run."
     if any(token in haystack for token in ("pip install", "could not find a version", "npm err!")):

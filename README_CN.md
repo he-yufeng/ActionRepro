@@ -87,6 +87,7 @@ v0.1 明确不自动发评论。原因很简单：工具不应该替你宣称“
 - `permission_gate`：GitHub token、CLA、Vercel、secret、workflow 权限问题
 - `network_external_service`：429、下载失败、外部服务不可达
 - `runner_disk`：runner 磁盘不足
+- `runner_memory`：OOM、exit 137、JavaScript heap out of memory
 - `flaky_timeout`：超时或疑似 flaky
 - `dependency_install`：pip/npm/pnpm/yarn 依赖安装失败
 - `lint_or_typecheck`：ruff、flake8、pylint、mypy、pyright、eslint 等
